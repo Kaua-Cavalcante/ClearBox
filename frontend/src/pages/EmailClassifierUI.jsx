@@ -2,9 +2,13 @@ import { motion } from "framer-motion";
 import {
   AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Copy, Download, Edit3, FileText, Inbox, Loader2, Mail, Trash2, Upload
 } from "lucide-react";
+
 import { useMemo, useRef, useState } from "react";
+
 import Badge from "../components/Badge";
+import History from "../components/History";
 import StatCard from "../components/StatCard";
+
 import { localHeuristicClassifier } from "../utils/classifierFallback";
 
 const prettyDate = () => new Date().toLocaleString();
@@ -15,6 +19,7 @@ export default function EmailClassifierUI() {
   const [items, setItems] = useState([]); // { id, source, name, text }
   const [results, setResults] = useState([]); // { id, category, reply, confidence }
   const [loading, setLoading] = useState(false);
+  const [history, setHistory] = useState([]);
   const [expandAdvanced, setExpandAdvanced] = useState(false);
   const inputRef = useRef(null);
 
@@ -76,8 +81,6 @@ export default function EmailClassifierUI() {
   async function processAll() {
     if (items.length === 0) return;
     setLoading(true);
-
-    // Try hitting a future backend endpoint. If it fails, fallback to local heuristic.
     try {
       const payload = items.map((it) => ({
         id: it.id,
@@ -98,13 +101,14 @@ export default function EmailClassifierUI() {
         confidence: r.confidence ?? 0.75,
       }));
       setResults(mapped);
+      setHistory((prev) => [...mapped, ...prev]);
     } catch (e) {
-      // fallback
       const mapped = items.map((it) => {
         const out = localHeuristicClassifier(it.text);
         return { id: it.id, ...out };
       });
       setResults(mapped);
+      setHistory((prev) => [...mapped, ...prev]);
     } finally {
       setLoading(false);
     }
@@ -332,7 +336,7 @@ export default function EmailClassifierUI() {
           </div>
 
           {/* Stats & Export */}
-          <div className="lg:col-span-1 space-y-4">
+          <div className="lg:col-span-1 space-y-9">
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
               <h3 className="text-sm font-medium mb-3">Estatísticas</h3>
               <div className="grid grid-cols-3 gap-2">
@@ -368,15 +372,7 @@ export default function EmailClassifierUI() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
-              <h3 className="text-sm font-medium mb-2">Como integrar</h3>
-              <p className="text-xs text-slate-600">
-                Implemente um endpoint <code>/api/classify</code> que receba{" "}
-                <code>{`{ emails: [{id, text, name}] }`}</code> e responda com{" "}
-                <code>{`{ results: [{id, category, reply, confidence}] }`}</code>
-                .
-              </p>
-            </div>
+            <History history={history} />
           </div>
         </motion.section>
 
