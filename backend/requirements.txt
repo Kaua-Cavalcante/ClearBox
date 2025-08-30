@@ -3,3 +3,4 @@ uvicorn
 scikit-learn
 nltk
 transformers
+torch
