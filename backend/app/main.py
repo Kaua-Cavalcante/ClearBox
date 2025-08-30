@@ -2,12 +2,14 @@ from typing import List, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
 from transformers import pipeline
-from .classifier import classify_email
 from fastapi.middleware.cors import CORSMiddleware
+import requests
+import os
 
 app = FastAPI()
 
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+HF_API_KEY = os.getenv("HF_API_KEY")
+HF_MODEL = "facebook/bart-large-mnli"
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,6 +26,15 @@ class Email(BaseModel):
 
 class EmailRequest(BaseModel):
     emails: List[Email]
+    
+def classify_with_hf(text: str, labels: list[str]):
+    url = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
+    headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+    payload = {"inputs": text, "parameters": {"candidate_labels": labels}}
+
+    response = requests.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+    return response.json()
 
 @app.post("/api/classify")
 def classify_emails(request: EmailRequest):
@@ -31,9 +42,10 @@ def classify_emails(request: EmailRequest):
     candidate_labels = ["suporte", "status", "elogio", "spam", "outros"]
     
     for email in request.emails:
-        result = classifier(email.text, candidate_labels)
-        category = result["labels"][0]
-        confidence = float(result["scores"][0])
+        hf_result = classify_with_hf(email.text, candidate_labels)
+        
+        category = hf_result["labels"][0]
+        confidence = float(hf_result["scores"][0])
         
         if category == "status":
             reply = "Olá! Sua solicitação está em análise. Em breve daremos um retorno."

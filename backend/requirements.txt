@@ -4,3 +4,5 @@ scikit-learn
 nltk
 transformers
 torch
+requests
+python-dotenv
