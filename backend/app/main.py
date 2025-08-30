@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import requests
@@ -9,8 +9,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 HF_API_KEY = os.getenv("HF_API_KEY")
-HF_API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-mnli"
 HEADERS = {"Authorization": f"Bearer {HF_API_KEY}"}
+
+ZERO_SHOT_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-mnli"
+SPAM_MODEL_URL = "https://api-inference.huggingface.co/models/mrm8488/bert-mini-finetuned-phishing"
+OFFENSIVE_MODEL_URL = "https://api-inference.huggingface.co/models/unitary/toxic-bert"
 
 app = FastAPI()
 
@@ -30,67 +33,68 @@ class Email(BaseModel):
 class EmailRequest(BaseModel):
     emails: List[Email]
     
-def classify_with_hf(text: str):
+def classify_with_zero_shot(text: str):
     labels = [
         "email de trabalho legítimo",
         "mensagem irrelevante / improdutiva",
         "email de spam / phishing / golpe"
     ]
     
-    response = requests.post(HF_API_URL, headers=HEADERS, json={
-        "inputs": text, "parameters": {"candidate_labels": labels, "multi_label": False}
+    response = requests.post(ZERO_SHOT_URL, headers=HEADERS, json={
+        "inputs": text,
+        "parameters": {"candidate_labels": labels, "multi_label": False}
     })
     result = response.json()
-    
     best_idx = result["scores"].index(max(result["scores"]))
-    category = result["labels"][best_idx]
-    confidence = result["scores"][best_idx]
+    return result["labels"][best_idx], result["scores"][best_idx]
 
-    if category != "email de spam / phishing / golpe" and confidence < 0.75:
-        spam_model_url = "https://api-inference.huggingface.co/models/mrm8488/bert-mini-finetuned-phishing"
-        spam_response = requests.post(spam_model_url, headers=HEADERS, json={"inputs": text})
-        spam_result = spam_response.json()
-        
-        spam_label = spam_result[0][0]["label"]
-        spam_score = spam_result[0][0]["score"]
-        
-        if spam_label.lower() == "phishing" and spam_score > 0.85:
-            category = "email de spam / phishing / golpe"
-            confidence = spam_score
+def classify_with_spam_model(text: str):
+    response = requests.post(SPAM_MODEL_URL, headers=HEADERS, json={"inputs": text})
+    result = response.json()
+    if isinstance(result, list) and len(result) > 0:
+        label = result[0][0]["label"]
+        score = result[0][0]["score"]
+        if "phishing" in label or "spam" in label:
+            return "email de spam / phishing / golpe", score
+    return None, 0.0
 
-    return category, confidence
+def classify_offensive(text: str):
+    response = requests.post(OFFENSIVE_MODEL_URL, headers=HEADERS, json={"inputs": text})
+    result = response.json()
+    if isinstance(result, list) and len(result) > 0:
+        scores = {item["label"].lower(): item["score"] for item in result[0]}
+        if "toxic" in scores and scores["toxic"] > 0.7:
+            return True
+    return False
 
 @app.post("/api/classify")
 def classify_emails(request: EmailRequest):
     results = []
 
     for email in request.emails:
-        category, confidence = classify_with_hf(email.text)
-
-        # Resposta automática básica
-        reply = ""
-        if category == "produtivo":
-            reply = "Seu pedido foi recebido e será processado em breve."
-        elif category == "improdutivo":
-            reply = "Agradecemos sua mensagem."
-        elif category == "spam":
-            reply = "Mensagem identificada como spam."
-        elif category == "ofensivo":
-            reply = "Mensagem contém linguagem ofensiva e não será processada."
+        category, confidence = classify_with_zero_shot(email.text)
+        
+        if category != "email de spam / phishing / golpe" and confidence < 0.75:
+            spam_cat, spam_conf = classify_with_spam_model(email.text)
+            if spam_cat:
+                category, confidence = spam_cat, spam_conf
+        
+        offensive = classify_offensive(email.text)
+        if offensive:
+            category = "conteúdo ofensivo"
 
         results.append({
             "id": email.id,
             "text": email.text,
             "name": email.name,
-            "category": category,
-            "confidence": confidence,
-            "reply": reply
+            "classification": category,
+            "confidence": confidence
         })
-        
-    stats = {
-        "produtivo": len([r for r in results if r["category"] == "produtivo"]),
-        "improdutivo": len([r for r in results if r["category"] == "improdutivo"]),
-        "spam": len([r for r in results if r["category"] == "spam"]),
-        "ofensivo": len([r for r in results if r["category"] == "ofensivo"])
+
+    summary = {
+        "produtivo": sum(1 for r in results if r["classification"] == "email de trabalho legítimo"),
+        "improdutivo": sum(1 for r in results if r["classification"] == "mensagem irrelevante / improdutiva"),
+        "spam": sum(1 for r in results if r["classification"] == "email de spam / phishing / golpe"),
+        "ofensivo": sum(1 for r in results if r["classification"] == "conteúdo ofensivo")
     }
-    return {"results": results, "stats": stats}
+    return {"results": results, "summary": summary}
