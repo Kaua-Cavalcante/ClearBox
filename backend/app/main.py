@@ -25,10 +25,12 @@ class EmailRequest(BaseModel):
 @app.post("/api/classify")
 def classify_emails(request: EmailRequest):
     results = []
-    for email_text in request.emails:
-        category, response = classify_email(email_text)
+    for email in request.emails:
+        category, response = classify_email(email.text)
         results.append({
-            "email": email_text,
+            "id": email.id,
+            "name": email.name,
+            "text": email.text,
             "category": category,
             "reply": response
         })
