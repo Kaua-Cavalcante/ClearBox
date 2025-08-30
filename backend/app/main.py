@@ -13,9 +13,14 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+class Email(BaseModel):
+    id: int
+    text: str
+    name: str | None = None
+
 class EmailRequest(BaseModel):
-    emails: list[str]
-    
+    emails: list[Email]
+
 @app.post("/api/classify")
 def classify_emails(request: EmailRequest):
     results = []
