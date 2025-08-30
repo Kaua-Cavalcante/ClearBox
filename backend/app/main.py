@@ -31,28 +31,32 @@ class EmailRequest(BaseModel):
     emails: List[Email]
     
 def classify_with_hf(text: str):
-    labels = ["produtivo", "improdutivo", "spam"]
-    payload = {
-        "inputs": text,
-        "parameters": {"candidate_labels": labels, "multi_label": False}
-    }
-    response = requests.post(HF_API_URL, headers=HEADERS, json=payload)
-    response.raise_for_status()
+    labels = [
+        "email de trabalho legítimo",
+        "mensagem irrelevante / improdutiva",
+        "email de spam / phishing / golpe"
+    ]
+    
+    response = requests.post(HF_API_URL, headers=HEADERS, json={
+        "inputs": text, "parameters": {"candidate_labels": labels, "multi_label": False}
+    })
     result = response.json()
     
     best_idx = result["scores"].index(max(result["scores"]))
     category = result["labels"][best_idx]
-    confidence = float(result["scores"][best_idx])
-    
-    toxic_model_url = "https://api-inference.huggingface.co/models/unitary/toxic-bert"
-    response_toxic = requests.post(toxic_model_url, headers=HEADERS, json={"inputs": text})
-    response_toxic.raise_for_status()
-    toxic_result = response_toxic.json()
-    
-    toxic_score = toxic_result[0][0]["score"]
-    if toxic_score > 0.85:  # threshold ajustável
-        category = "ofensivo"
-        confidence = toxic_score
+    confidence = result["scores"][best_idx]
+
+    if category != "email de spam / phishing / golpe" and confidence < 0.75:
+        spam_model_url = "https://api-inference.huggingface.co/models/mrm8488/bert-mini-finetuned-phishing"
+        spam_response = requests.post(spam_model_url, headers=HEADERS, json={"inputs": text})
+        spam_result = spam_response.json()
+        
+        spam_label = spam_result[0][0]["label"]
+        spam_score = spam_result[0][0]["score"]
+        
+        if spam_label.lower() == "phishing" and spam_score > 0.85:
+            category = "email de spam / phishing / golpe"
+            confidence = spam_score
 
     return category, confidence
 
