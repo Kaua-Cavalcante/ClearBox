@@ -1,7 +1,6 @@
 from typing import List, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
-from transformers import pipeline
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import os
