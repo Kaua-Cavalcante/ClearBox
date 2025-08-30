@@ -15,7 +15,7 @@ app.add_middleware(
 )
 
 class Email(BaseModel):
-    id: int
+    id: str
     text: str
     name: str | None = None
 
