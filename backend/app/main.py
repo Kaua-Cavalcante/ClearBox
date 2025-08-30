@@ -65,25 +65,36 @@ def classify_emails(request: EmailRequest):
     results = []
     candidate_labels = [
         "produtivo: mensagens relacionadas a solicitações, suporte, abertura de conta, andamento de processos ou qualquer tarefa de trabalho",
-        "improdutivo: mensagens de felicitação, correntes, spam, propaganda, irrelevantes ou sem relação com o trabalho"
+        "improdutivo: mensagens de felicitação, agradecimento social, correntes, spam, propaganda, irrelevantes ou sem relação com o trabalho"
+    ]
+
+    keywords_produtivo = [
+        "solicitar", "abertura de conta", "status da solicitação",
+        "cadastro", "suporte", "requisição", "ajuda", "problema", "atendimento"
+    ]
+
+    keywords_improdutivo = [
+        "feliz natal", "feliz ano novo", "boas festas",
+        "parabéns", "propaganda", "prêmio", "recompensa"
     ]
 
     for email in request.emails:
         text_lower = email.text.lower()
 
-        # 🔹 Regras manuais de reforço (evita que coisas produtivas virem improdutivas)
-        if any(palavra in text_lower for palavra in [
-            "solicitar", "abertura de conta", "status da solicitação", "cadastro", "suporte", "requisição"
-        ]):
-            category = "Produtivo"
+        # Regras manuais de reforço (evita que coisas produtivas virem improdutivas)
+        if any(palavra in text_lower for palavra in keywords_produtivo):
+            category = "produtivo"
+            confidence = 0.90
+        elif any(palavra in text_lower for palavra in keywords_improdutivo):
+            category = "improdutivo"
             confidence = 0.90
         else:
-            # 🔹 Classificação automática
+            # Classificação automática
             hf_result = classify_with_hf(email.text, candidate_labels)
-            category = "Produtivo" if "produtivo" in hf_result["labels"][0] else "Improdutivo"
+            category = "produtivo" if "produtivo" in hf_result["labels"][0] else "improdutivo"
             confidence = float(hf_result["scores"][0])
 
-        # 🔹 Gera resposta dinâmica
+        # Gera resposta dinâmica
         reply = generate_dynamic_reply(category, email.text)
 
         results.append({
