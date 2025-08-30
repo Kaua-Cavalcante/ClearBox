@@ -38,32 +38,54 @@ def classify_with_hf(text: str, labels: list[str]):
 
     return response.json()
 
+def generate_dynamic_reply(category: str, text: str) -> str:
+    """
+    Gera uma resposta automática de forma dinâmica,
+    variando conforme a categoria e o conteúdo do email.
+    """
+    if category == "produtivo":
+        respostas = [
+            f"Olá! Recebemos sua mensagem: '{text[:20]}...' e já estamos analisando sua solicitação.",
+            "Obrigado pelo contato, sua solicitação está sendo processada.",
+            "Nossa equipe recebeu sua mensagem e em breve retornaremos com uma atualização.",
+            "Estamos verificando sua solicitação e logo você terá uma resposta."
+        ]
+    else:  # improdutivo
+        respostas = [
+            "Obrigado pela mensagem! Registramos o recebimento.",
+            "Agradecemos o contato, mas não há necessidade de ação adicional.",
+            "Mensagem recebida! Caso precise de suporte, nos envie mais detalhes.",
+            f"Entendemos sua mensagem: '{text[:20]}...', mas não exige nenhuma ação da nossa parte."
+        ]
+
+    return random.choice(respostas)
+
 @app.post("/api/classify")
 def classify_emails(request: EmailRequest):
     results = []
-    candidate_labels = ["produtivo", "improdutivo"]
+    candidate_labels = [
+        "produtivo: mensagens relacionadas a solicitações, suporte, abertura de conta, andamento de processos ou qualquer tarefa de trabalho",
+        "improdutivo: mensagens de felicitação, correntes, spam, propaganda, irrelevantes ou sem relação com o trabalho"
+    ]
 
     for email in request.emails:
-        hf_result = classify_with_hf(email.text, candidate_labels)
+        text_lower = email.text.lower()
 
-        category = hf_result["labels"][0]
-        confidence = float(hf_result["scores"][0])
+        # 🔹 Regras manuais de reforço (evita que coisas produtivas virem improdutivas)
+        if any(palavra in text_lower for palavra in [
+            "solicitar", "abertura de conta", "status da solicitação", "cadastro", "suporte", "requisição"
+        ]):
+            category = "produtivo"
+            confidence = 0.95
+        else:
+            # 🔹 Classificação automática
+            hf_result = classify_with_hf(email.text, candidate_labels)
+            category = "produtivo" if "produtivo" in hf_result["labels"][0] else "improdutivo"
+            confidence = float(hf_result["scores"][0])
 
-        if category == "produtivo":
-            respostas = [
-                f"Olá prezado(a), recebemos sua mensagem. Nossa equipe já está analisando.",
-                f"Obrigado pelo contato, prezado(a). Vamos avaliar sua solicitação: '{email.text}'.",
-                f"Sua mensagem foi registrada e será respondida em breve."
-            ]
-        else:  # improdutivo
-            respostas = [
-                f"Olá prezado(a), recebemos sua mensagem: '{email.text}'. No momento não é necessária nenhuma ação.",
-                f"Agradecemos o contato, prezado(a), mas essa mensagem não requer acompanhamento.",
-                f"Sua mensagem foi registrada: '{email.text}', mas não há medidas a serem tomadas."
-            ]
-            
-        reply = random.choice(respostas)
-            
+        # 🔹 Gera resposta dinâmica
+        reply = generate_dynamic_reply(category, email.text)
+
         results.append({
             "id": email.id,
             "category": category,
