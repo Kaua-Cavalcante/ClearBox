@@ -75,12 +75,12 @@ def classify_emails(request: EmailRequest):
         if any(palavra in text_lower for palavra in [
             "solicitar", "abertura de conta", "status da solicitação", "cadastro", "suporte", "requisição"
         ]):
-            category = "produtivo"
-            confidence = 0.95
+            category = "Produtivo"
+            confidence = 0.90
         else:
             # 🔹 Classificação automática
             hf_result = classify_with_hf(email.text, candidate_labels)
-            category = "produtivo" if "produtivo" in hf_result["labels"][0] else "improdutivo"
+            category = "Produtivo" if "produtivo" in hf_result["labels"][0] else "Improdutivo"
             confidence = float(hf_result["scores"][0])
 
         # 🔹 Gera resposta dinâmica

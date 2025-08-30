@@ -1,5 +1,5 @@
 export default function Badge({ category }) {
-  const isProd = category === "Produtivo";
+  const isProd = category === "Produtivo" || category === "produtivo";
   return (
     <span
       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${

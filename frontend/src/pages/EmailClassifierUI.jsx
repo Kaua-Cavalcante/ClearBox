@@ -25,8 +25,8 @@ export default function EmailClassifierUI() {
 
   const stats = useMemo(() => {
     const total = results.length;
-    const prod = results.filter((r) => r.category === "Produtivo").length;
-    const unp = results.filter((r) => r.category === "Improdutivo").length;
+    const prod = results.filter((r) => r.category === "Produtivo" || r.category === "produtivo").length;
+    const unp = results.filter((r) => r.category === "Improdutivo" || r.category === "improdutivo").length;
     const confAvg = total
       ? results.reduce((a, b) => a + (b.confidence || 0), 0) / total
       : 0;
