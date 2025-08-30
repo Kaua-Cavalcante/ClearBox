@@ -92,6 +92,7 @@ export default function EmailClassifierUI() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ emails: payload }),
       });
+      console.log(JSON.stringify({ emails: payload }, null, 2));
       if (!res.ok) throw new Error("backend off");
       const data = await res.json();
       const mapped = (data.results || []).map((r) => ({
