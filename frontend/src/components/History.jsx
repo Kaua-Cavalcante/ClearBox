@@ -1,6 +1,6 @@
 const History = ({ history }) => {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 max-h-60 overscroll-y-auto overflow-scroll">
       <h3 className="text-sm font-medium mb-2">Emails Processados</h3>
       {history.length === 0 ? (
         <p className="text-xs text-slate-600">Nenhum email processado ainda.</p>
