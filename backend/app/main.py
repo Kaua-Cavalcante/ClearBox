@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import os
+import random
 
 app = FastAPI()
 
@@ -40,7 +41,7 @@ def classify_with_hf(text: str, labels: list[str]):
 @app.post("/api/classify")
 def classify_emails(request: EmailRequest):
     results = []
-    candidate_labels = ["suporte", "status", "elogio", "spam", "outros"]
+    candidate_labels = ["produtivo", "improdutivo"]
 
     for email in request.emails:
         hf_result = classify_with_hf(email.text, candidate_labels)
@@ -48,16 +49,20 @@ def classify_emails(request: EmailRequest):
         category = hf_result["labels"][0]
         confidence = float(hf_result["scores"][0])
 
-        if category == "status":
-            reply = "Olá! Sua solicitação está em análise. Em breve daremos um retorno."
-        elif category == "suporte":
-            reply = "Nossa equipe de suporte irá ajudá-lo em breve."
-        elif category == "elogio":
-            reply = "Agradecemos muito pelo seu feedback positivo!"
-        elif category == "spam":
-            reply = "Mensagem marcada como não relevante."
-        else:
-            reply = "Obrigado pelo seu contato, vamos analisar sua mensagem."
+        if category == "produtivo":
+            respostas = [
+                f"Olá prezado(a), recebemos sua mensagem. Nossa equipe já está analisando.",
+                f"Obrigado pelo contato, prezado(a). Vamos avaliar sua solicitação: '{email.text}'.",
+                f"Sua mensagem foi registrada e será respondida em breve."
+            ]
+        else:  # improdutivo
+            respostas = [
+                f"Olá prezado(a), recebemos sua mensagem: '{email.text}'. No momento não é necessária nenhuma ação.",
+                f"Agradecemos o contato, prezado(a), mas essa mensagem não requer acompanhamento.",
+                f"Sua mensagem foi registrada: '{email.text}', mas não há medidas a serem tomadas."
+            ]
+            
+        reply = random.choice(respostas)
             
         results.append({
             "id": email.id,
