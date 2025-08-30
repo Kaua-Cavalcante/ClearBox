@@ -33,13 +33,20 @@ Ele combina Frontend (React) para interface do usuário e Backend (Python FastAP
 
 ```
 ├── frontend/        # Interface do usuário em React
-│   ├── src/components/EmailClassifierUI.jsx
-│   ├── src/components/History.jsx
-│   └── ...
+│   ├── src/components/
+│   ├── src/hooks/
+│   ├── src/pages/
+│   ├── src/utils/
+│   ├── src/App.jsx
+│   ├── src/main.jsx
+│   └── index.html
 ├── backend/         # API em Python (FastAPI)
-│   ├── main.py
+│   ├── app/main.py
+│   ├── app/classifier.py
+│   ├── app/nlp_utils.py
+│   ├── venv/
 │   ├── requirements.txt
-│   └── ...
+│   └── Procfile
 └── README.md
 ```
 
@@ -77,7 +84,7 @@ pip install -r requirements.txt
 #### 4. Inicie o servidor:
 
 ```bash
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
 > O backend estará rodando em: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
