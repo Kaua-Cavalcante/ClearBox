@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import FastAPI
 from pydantic import BaseModel
 from .classifier import classify_email
@@ -19,7 +20,7 @@ class Email(BaseModel):
     name: str | None = None
 
 class EmailRequest(BaseModel):
-    emails: list[Email]
+    emails: List[Email]
 
 @app.post("/api/classify")
 def classify_emails(request: EmailRequest):
