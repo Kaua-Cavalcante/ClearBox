@@ -41,7 +41,6 @@ export default function EmailClassifierUI() {
         "Alguns arquivos foram ignorados (apenas .txt e .pdf são aceitos)."
       );
     }
-    // For TXT, read content; for PDF, we keep placeholder (text extraction será no backend)
     accepted.forEach((f) => {
       if (/\.txt$/i.test(f.name)) {
         const reader = new FileReader();
@@ -214,7 +213,7 @@ export default function EmailClassifierUI() {
                 <label className="cursor-pointer group flex flex-col items-center justify-center rounded-xl border border-slate-300 p-6 hover:border-slate-400 transition">
                   <Upload className="w-6 h-6 mb-2" />
                   <span className="text-sm font-medium">
-                    Arraste ou selecione arquivos
+                    Selecione arquivos
                   </span>
                   <span className="text-xs text-slate-500">
                     Formatos aceitos: .txt, .pdf (múltiplos)
