@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import {
-  AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Copy, Download, Edit3, FileText, Inbox, Loader2, Mail, Trash2, Upload
+  CheckCircle2, ChevronDown, ChevronUp, Copy, Download, Edit3, FileText, Inbox, Loader2, Mail, Trash2, Upload
 } from "lucide-react";
 
 import { useMemo, useRef, useState } from "react";
@@ -87,7 +87,7 @@ export default function EmailClassifierUI() {
         text: it.text,
         name: it.name,
       }));
-      const res = await fetch("/api/classify", {
+      const res = await fetch("https://clearbox.onrender.com/api/classify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ emails: payload }),
@@ -284,7 +284,7 @@ export default function EmailClassifierUI() {
                   ) : (
                     <ChevronDown className="w-4 h-4" />
                   )}
-                  Opções avançadas
+                  Mais informações
                 </button>
               </div>
 
@@ -336,7 +336,7 @@ export default function EmailClassifierUI() {
           </div>
 
           {/* Stats & Export */}
-          <div className="lg:col-span-1 space-y-9">
+          <div className="lg:col-span-1 space-y-4">
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
               <h3 className="text-sm font-medium mb-3">Estatísticas</h3>
               <div className="grid grid-cols-3 gap-2">
@@ -441,10 +441,8 @@ export default function EmailClassifierUI() {
 
         <footer className="py-6 text-center text-xs text-slate-500">
           <div className="flex items-center justify-center gap-2">
-            <AlertCircle className="w-4 h-4" />
             <span>
-              Protótipo para demonstração. Classificação final pode variar
-              conforme o modelo do backend.
+              &copy; 2025 • Protótipo desenvolvido por <a className="hover:underline text-emerald-600" href="https://github.com/Kaua-Cavalcante">@Kaua-Cavalcante</a>
             </span>
           </div>
         </footer>
