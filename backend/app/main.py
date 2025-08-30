@@ -31,7 +31,7 @@ class EmailRequest(BaseModel):
     emails: List[Email]
     
 def classify_with_hf(text: str):
-    labels = ["produtivo", "improdutivo", "spam", "ofensivo"]
+    labels = ["produtivo", "improdutivo", "spam"]
     payload = {
         "inputs": text,
         "parameters": {"candidate_labels": labels, "multi_label": False}
@@ -41,8 +41,20 @@ def classify_with_hf(text: str):
     result = response.json()
     
     best_idx = result["scores"].index(max(result["scores"]))
-    return result["labels"][best_idx], float(result["scores"][best_idx])
+    category = result["labels"][best_idx]
+    confidence = float(result["scores"][best_idx])
     
+    toxic_model_url = "https://api-inference.huggingface.co/models/unitary/toxic-bert"
+    response_toxic = requests.post(toxic_model_url, headers=HEADERS, json={"inputs": text})
+    response_toxic.raise_for_status()
+    toxic_result = response_toxic.json()
+    
+    toxic_score = toxic_result[0][0]["score"]
+    if toxic_score > 0.85:  # threshold ajustável
+        category = "ofensivo"
+        confidence = toxic_score
+
+    return category, confidence
 
 @app.post("/api/classify")
 def classify_emails(request: EmailRequest):
