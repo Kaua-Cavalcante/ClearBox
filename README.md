@@ -29,33 +29,22 @@
 Este projeto é uma solução digital que automatiza a leitura e classificação de emails.   
 Ele combina Frontend (React) para interface do usuário e Backend (Python FastAPI) para processamento e classificação.
 
-## 📂 Estrutura do Projeto
+## Tecnologias utilizadas
+- [Python3](https://www.python.org/)
+- [FastAPI](https://fastapi.tiangolo.com)
+- [Hugging Face Inference API](https://huggingface.co/inference-api)
+- [dotenv](https://pypi.org/project/python-dotenv/)
+- [React](https://react.dev/)
+- [TailwindCSS](https://tailwindcss.com/)
 
-```
-├── frontend/        # Interface do usuário em React
-│   ├── src/components/
-│   ├── src/hooks/
-│   ├── src/pages/
-│   ├── src/utils/
-│   ├── src/App.jsx
-│   ├── src/main.jsx
-│   └── index.html
-├── backend/         # API em Python (FastAPI)
-│   ├── app/main.py
-│   ├── app/classifier.py
-│   ├── app/nlp_utils.py
-│   ├── venv/
-│   ├── requirements.txt
-│   └── Procfile
-└── README.md
-```
 
 ## 🚀 Executando o Projeto Localmente
 
 ### 1. Clonar o repositório
-
-```bash git clone https://github.com/seu-repositorio/email-classifier.git
-cd email-classifier
+ 
+```bash 
+git clone https://github.com/Kaua-Cavalcante/ClearBox.git
+cd ClearBox
 ```
 
 ### 2. Configurar o Backend (Python + FastAPI)
@@ -69,8 +58,10 @@ cd backend
 
 ```bash
 python -m venv venv
+
 # Windows
 venv\Scripts\activate
+
 # Linux/Mac
 source venv/bin/activate
 ```
@@ -81,7 +72,19 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### 4. Inicie o servidor:
+#### 4. Configure a variável de ambiente da API Hugging Face
+Você precisa de um token de acesso da Hugging Face.
+Se ainda não tiver, crie gratuitamente em: [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
+
+Depois, defina a variável de ambiente HF_API_KEY com o valor do token:
+
+```bash
+export HF_API_KEY=seu_token_aqui #Linux/Mac
+
+setx HF_API_KEY "seu_token_aqui" #Windows
+```
+
+#### 5. Inicie o servidor:
 
 ```bash
 uvicorn app.main:app --reload
